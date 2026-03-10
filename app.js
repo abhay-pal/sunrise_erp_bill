@@ -40,6 +40,20 @@ function actionFromPath(path) {
   return path.replace(/^\//, '');
 }
 
+
+function normalizeProducts(products) {
+  return (products || []).map(product => {
+    if (Array.isArray(product)) return product;
+    return [
+      product.description || product.desc || product.item || '',
+      product.partNo || product.part || '',
+      product.hsn || product.hsnSac || '',
+      Number(product.salePrice || product.unitPrice || 0)
+    ];
+  }).filter(product => String(product[0] || '').trim());
+
+}
+
 async function apiGet(path, params = {}) {
   const root = getApiRoot();
   const actionMode = useActionMode();
@@ -256,7 +270,7 @@ async function loadInitialData() {
   showLoader('Loading products and invoices...');
   try {
     const data = await apiGet('/initial-data');
-    state.products = data.products || [];
+    state.products = normalizeProducts(data.products);
     state.invoices = data.invoices || [];
     state.nextInvoiceNo = data.nextInvoiceNo || 'SUN-001';
     renderInvoiceOptions(state.invoices);
