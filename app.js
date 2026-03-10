@@ -1,7 +1,6 @@
 const LOGIN_USER = 'admin@sunrise.com';
 const LOGIN_PASS = 'Admin123@';
 const SESSION_KEY = 'sunrise_auth_ok';
-
 const state = {
   products: [],
   invoices: [],
@@ -39,6 +38,7 @@ function useActionMode() {
 
 function actionFromPath(path) {
   return path.replace(/^\//, '');
+  return CFG.APPS_SCRIPT_WEBAPP_URL?.trim() || CFG.API_BASE_URL || '/api';
 }
 
 async function apiGet(path, params = {}) {
@@ -48,6 +48,12 @@ async function apiGet(path, params = {}) {
   if (actionMode) url.searchParams.set('action', actionFromPath(path));
   Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
 
+ const useActionMode = !!CFG.APPS_SCRIPT_WEBAPP_URL;
+  const url = new URL(useActionMode ? root : `${root}${path}`, window.location.origin);
+  if (useActionMode) {
+    url.searchParams.set('action', path.replace('/',''));
+  }
+  Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
   const res = await fetch(url.toString(), { method: 'GET' });
   const json = await res.json();
   if (!res.ok || json.success === false) throw new Error(json.error || 'Request failed');
@@ -60,6 +66,9 @@ async function apiPost(path, payload) {
   const url = new URL(actionMode ? root : `${root}${path}`, window.location.origin);
   const body = { action: actionFromPath(path), ...payload };
 
+  const useActionMode = !!CFG.APPS_SCRIPT_WEBAPP_URL;
+  const url = new URL(useActionMode ? root : `${root}${path}`, window.location.origin);
+  const body = useActionMode ? { action: path.replace('/',''), ...payload } : payload;
   const res = await fetch(url.toString(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -94,6 +103,7 @@ function switchView(view) {
 
 function renderInvoiceOptions(invoices) {
   const unique = [...new Set((invoices || []).filter(Boolean).map(String))];
+  const unique = [...new Set(invoices.filter(Boolean))];
   els.invoiceSearch.innerHTML = '<option value="">Select Invoice No</option>';
   unique.forEach(inv => {
     const opt = document.createElement('option');
@@ -130,6 +140,9 @@ function addRow(item = null) {
   });
   const isFreight = item?.desc?.includes('Packing') || item?.desc?.includes('Freight');
   if (item?.desc && !found && !isFreight) options += `<option value="custom" selected>${item.desc}</option>`;
+  if (item?.desc && !found && !isFreight) {
+    options += `<option value="custom" selected>${item.desc}</option>`;
+  }
 
   const unitPriceVal = item ? Number(item.unitPrice || item.basicPrice || 0) : 0;
   const discountPercentVal = item ? Number(item.discountPercent || 0) : 0;
@@ -174,6 +187,10 @@ function addRow(item = null) {
 
 function addFreightRow() {
   addRow({ desc: 'Packing & Freight Charge', part: '', hsn: '996511', qty: 1, unitPrice: 0, discountPercent: 0, igst: 18, cgst: 0, sgst: 0 });
+  addRow({
+    desc: 'Packing & Freight Charge', part: '', hsn: '996511', qty: 1,
+    unitPrice: 0, discountPercent: 0, igst: 18, cgst: 0, sgst: 0
+  });
 }
 
 function taxSelect(type) {
@@ -256,13 +273,13 @@ function serializeItems() {
 
 async function loadInitialData() {
   showLoader('Loading products and invoices from Google Sheet...');
+  showLoader('Loading products and invoices...');
   try {
     const data = await apiGet('/initial-data');
     state.products = data.products || [];
     state.invoices = data.invoices || [];
     state.nextInvoiceNo = data.nextInvoiceNo || 'SUN-001';
     renderInvoiceOptions(state.invoices);
-
     if (!state.products.length) toast('No products found in Drop_down sheet.');
     if (!state.invoices.length) toast('No existing invoices found in Data_entry sheet.');
   } finally {
@@ -281,7 +298,8 @@ async function loadInvoiceForEdit() {
     switchView('form');
     const f = els.form;
     ['invoiceNo', 'customerName', 'billingAddress', 'stateCode', 'shippingAddress', 'poDetails', 'gstNo', 'remark', 'invoiceDate', 'poDate'].forEach(k => {
-      if (f[k] && data[k] !== undefined) f[k].value = data[k] || '';
+    ['invoiceNo','customerName','billingAddress','stateCode','shippingAddress','poDetails','gstNo','remark','invoiceDate','poDate'].forEach(k => {
+     if (f[k] && data[k] !== undefined) f[k].value = data[k] || '';
     });
 
     els.itemsBody.innerHTML = '';
@@ -360,6 +378,10 @@ function wireEvents() {
   els.invoiceFilter.addEventListener('input', e => {
     const q = e.target.value.toLowerCase().trim();
     renderInvoiceOptions(state.invoices.filter(inv => String(inv).toLowerCase().includes(q)));
+  els.form.addEventListener('submit', saveInvoice);
+  els.invoiceFilter.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    renderInvoiceOptions(state.invoices.filter(inv => inv.toLowerCase().includes(q)));
   });
 }
 
@@ -375,3 +397,4 @@ window.addEventListener('unhandledrejection', e => {
 
 wireEvents();
 bootstrapAuth();
+loadInitialData();

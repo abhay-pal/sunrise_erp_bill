@@ -108,8 +108,6 @@ th, td { border-bottom: 1px solid var(--line); padding: .4rem; text-align: cente
   .form-grid { grid-template-columns: 1fr; }
   .col-span-2 { grid-column: span 1; }
 }
-
-
 .auth-page {
   min-height: 100vh;
   display: grid;

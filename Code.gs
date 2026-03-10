@@ -1,6 +1,4 @@
-// ============================
 // SUNRISE INVOICE API (GAS)
-// ============================
 // Update these constants with your sheet + drive folder IDs.
 const SHEET_ID = '1B31AbcRfXsaONDWzxhBQEmU1hTPeIcz_nHicCQcdwOw';
 const FOLDER_ID = '15SOXm9CbyeIFxpvjVmlmSorutpPYsHGN';
@@ -37,6 +35,9 @@ function doPost(e) {
       return jsonResponse({ success: true, data: saveInvoice(payload) });
     }
 
+    const action = payload.action || '';
+
+
     if (action === 'save-invoice') {
       return jsonResponse({ success: true, data: saveInvoice(payload) });
     }
@@ -66,7 +67,10 @@ function getInitialData() {
   const entrySheet = ss.getSheetByName('Data_entry');
   if (entrySheet && entrySheet.getLastRow() >= 2) {
     const rawData = entrySheet.getRange(2, 2, entrySheet.getLastRow() - 1, 1).getValues();
+
     invoices = rawData.flat().filter(String).map(function(v) { return String(v).replace(/^'/, '').trim(); });
+    invoices = rawData.flat().filter(String).map(String);
+
     if (invoices.length > 0) {
       const lastInv = invoices[invoices.length - 1];
       const match = lastInv.match(/(\d+)$/);
@@ -91,13 +95,19 @@ function loadInvoiceData(invoiceNo) {
   const searchStr = String(invoiceNo).trim();
 
   for (let i = 1; i < data.length; i++) {
+
     const rowInv = String(data[i][1]).replace(/^'/, '').trim();
+
+    const rowInv = String(data[i][1]).trim();
     if (rowInv === searchStr) {
       let remarkVal = data[i].length > 12 ? data[i][12] : '';
       return {
         found: true,
         invoiceDate: formatDate(data[i][0]),
         invoiceNo: String(data[i][1]).replace(/^'/, '').trim(),
+
+        invoiceNo: data[i][1],
+
         customerName: data[i][2],
         billingAddress: data[i][3],
         stateCode: data[i][4],

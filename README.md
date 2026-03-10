@@ -37,6 +37,7 @@ Apps Script uses `action` routing:
 - `GET .../exec?action=initial-data`
 - `GET .../exec?action=invoice&invoiceNo=SUN-001`
 - `POST .../exec?action=save-invoice` with JSON body `{ ...formData }` (or include `"action": "save-invoice"` in body)
+- `POST .../exec` with JSON body `{ "action": "save-invoice", ...formData }`
 
 ---
 

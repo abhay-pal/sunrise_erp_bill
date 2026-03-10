@@ -144,6 +144,111 @@
         </section>
       </main>
     </div>
+    <header class="app-header">
+      <h1>Sunrise Invoicing System</h1>
+      <p>Invoice creation, editing, and Google Drive PDF generation</p>
+    </header>
+
+    <main class="layout">
+      <section class="card" id="dashboard-view">
+        <h2>Dashboard</h2>
+        <div class="dashboard-actions">
+          <button id="btn-create-invoice" class="btn btn-primary">+ Create New Invoice</button>
+          <div class="edit-box">
+            <label for="invoice-search">Edit Existing Invoice</label>
+            <input id="invoice-filter" type="search" placeholder="Search invoice number..." />
+            <select id="invoice-search">
+              <option value="">Loading invoices...</option>
+            </select>
+            <button id="btn-edit-invoice" class="btn btn-dark">Load Invoice</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card hidden" id="form-view">
+        <div class="section-header sticky-header">
+          <h2>Invoice Form</h2>
+          <button id="btn-back" class="btn btn-outline">← Back to Dashboard</button>
+        </div>
+
+        <form id="invoice-form" novalidate>
+          <div class="form-grid">
+            <div class="col-span-2">
+              <label for="customerName">Customer Name</label>
+              <input id="customerName" name="customerName" type="text" required />
+            </div>
+            <div>
+              <label for="invoiceNo">Invoice Number</label>
+              <input id="invoiceNo" name="invoiceNo" type="text" required />
+            </div>
+            <div>
+              <label for="invoiceDate">Invoice Date</label>
+              <input id="invoiceDate" name="invoiceDate" type="date" required />
+            </div>
+
+            <div class="col-span-2">
+              <label for="billingAddress">Billing Address</label>
+              <textarea id="billingAddress" name="billingAddress"></textarea>
+            </div>
+            <div class="col-span-2">
+              <label for="shippingAddress">Shipping Address</label>
+              <textarea id="shippingAddress" name="shippingAddress" placeholder="Same as billing if blank"></textarea>
+            </div>
+
+            <div>
+              <label for="gstNo">GST No</label>
+              <input id="gstNo" name="gstNo" type="text" />
+            </div>
+            <div>
+              <label for="stateCode">State Code</label>
+              <input id="stateCode" name="stateCode" type="text" />
+            </div>
+            <div>
+              <label for="poDetails">PO Number</label>
+              <input id="poDetails" name="poDetails" type="text" />
+            </div>
+            <div>
+              <label for="poDate">PO Date</label>
+              <input id="poDate" name="poDate" type="date" />
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="items-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Description</th><th>Part No</th><th>HSN</th><th>Qty</th><th>Unit Price</th>
+                  <th>Disc %</th><th>Basic Price</th><th>Taxable</th><th>IGST %</th><th>CGST %</th><th>SGST %</th>
+                  <th>Total</th><th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="button-row">
+            <button type="button" id="btn-add-item" class="btn btn-dark">+ Add Item</button>
+            <button type="button" id="btn-add-freight" class="btn btn-warning">+ Add Packing & Freight</button>
+          </div>
+
+          <div class="form-footer">
+            <div class="remarks-box">
+              <label for="remark">Remark</label>
+              <textarea id="remark" name="remark"></textarea>
+            </div>
+            <div class="total-card">
+              <div class="total-line">
+                <span>Grand Total</span>
+                <input id="finalGrandTotal" name="finalGrandTotal" readonly />
+              </div>
+              <button class="btn btn-primary btn-save" type="submit">Save & Generate PDF</button>
+            </div>
+          </div>
+
+          <input id="itemsJson" name="itemsJson" type="hidden" />
+        </form>
+      </section>
+    </main>
 
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
