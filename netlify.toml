@@ -1,0 +1,18 @@
+# Replace YOUR_SCRIPT_DEPLOYMENT_ID with your Apps Script deployment ID.
+[[redirects]]
+  from = "/api/initial-data"
+  to = "https://script.google.com/macros/s/YOUR_SCRIPT_DEPLOYMENT_ID/exec?action=initial-data"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/invoice"
+  to = "https://script.google.com/macros/s/YOUR_SCRIPT_DEPLOYMENT_ID/exec?action=invoice"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/save-invoice"
+  to = "https://script.google.com/macros/s/YOUR_SCRIPT_DEPLOYMENT_ID/exec?action=save-invoice"
+  status = 200
+  force = true
