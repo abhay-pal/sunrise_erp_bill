@@ -51,6 +51,7 @@ function normalizeProducts(products) {
       Number(product.salePrice || product.unitPrice || 0)
     ];
   }).filter(product => String(product[0] || '').trim());
+
 }
 
 async function apiGet(path, params = {}) {
