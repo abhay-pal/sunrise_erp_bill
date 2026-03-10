@@ -1,3 +1,6 @@
+const LOGIN_USER = 'admin@sunrise.com';
+const LOGIN_PASS = 'Admin123@';
+const SESSION_KEY = 'sunrise_auth_ok';
 const state = {
   products: [],
   invoices: [],
@@ -7,6 +10,11 @@ const state = {
 const els = {
   loader: document.getElementById('app-loader'),
   loaderMessage: document.getElementById('loader-message'),
+  authView: document.getElementById('auth-view'),
+  appShell: document.getElementById('app-shell'),
+  loginForm: document.getElementById('login-form'),
+  loginEmail: document.getElementById('login-email'),
+  loginPassword: document.getElementById('login-password'),
   dashboard: document.getElementById('dashboard-view'),
   formView: document.getElementById('form-view'),
   form: document.getElementById('invoice-form'),
@@ -20,12 +28,27 @@ const els = {
 const CFG = window.APP_CONFIG || {};
 
 function getApiRoot() {
+  return (CFG.APPS_SCRIPT_WEBAPP_URL || CFG.API_BASE_URL || '/api').trim();
+}
+
+function useActionMode() {
+  const root = getApiRoot();
+  return !!CFG.APPS_SCRIPT_WEBAPP_URL || root.includes('script.google.com/macros');
+}
+
+function actionFromPath(path) {
+  return path.replace(/^\//, '');
   return CFG.APPS_SCRIPT_WEBAPP_URL?.trim() || CFG.API_BASE_URL || '/api';
 }
 
 async function apiGet(path, params = {}) {
   const root = getApiRoot();
-  const useActionMode = !!CFG.APPS_SCRIPT_WEBAPP_URL;
+  const actionMode = useActionMode();
+  const url = new URL(actionMode ? root : `${root}${path}`, window.location.origin);
+  if (actionMode) url.searchParams.set('action', actionFromPath(path));
+  Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
+
+ const useActionMode = !!CFG.APPS_SCRIPT_WEBAPP_URL;
   const url = new URL(useActionMode ? root : `${root}${path}`, window.location.origin);
   if (useActionMode) {
     url.searchParams.set('action', path.replace('/',''));
@@ -39,6 +62,10 @@ async function apiGet(path, params = {}) {
 
 async function apiPost(path, payload) {
   const root = getApiRoot();
+  const actionMode = useActionMode();
+  const url = new URL(actionMode ? root : `${root}${path}`, window.location.origin);
+  const body = { action: actionFromPath(path), ...payload };
+
   const useActionMode = !!CFG.APPS_SCRIPT_WEBAPP_URL;
   const url = new URL(useActionMode ? root : `${root}${path}`, window.location.origin);
   const body = useActionMode ? { action: path.replace('/',''), ...payload } : payload;
@@ -75,6 +102,7 @@ function switchView(view) {
 }
 
 function renderInvoiceOptions(invoices) {
+  const unique = [...new Set((invoices || []).filter(Boolean).map(String))];
   const unique = [...new Set(invoices.filter(Boolean))];
   els.invoiceSearch.innerHTML = '<option value="">Select Invoice No</option>';
   unique.forEach(inv => {
@@ -111,6 +139,7 @@ function addRow(item = null) {
     options += `<option value="${idx}" ${selected ? 'selected' : ''}>${p[0]}</option>`;
   });
   const isFreight = item?.desc?.includes('Packing') || item?.desc?.includes('Freight');
+  if (item?.desc && !found && !isFreight) options += `<option value="custom" selected>${item.desc}</option>`;
   if (item?.desc && !found && !isFreight) {
     options += `<option value="custom" selected>${item.desc}</option>`;
   }
@@ -157,6 +186,7 @@ function addRow(item = null) {
 }
 
 function addFreightRow() {
+  addRow({ desc: 'Packing & Freight Charge', part: '', hsn: '996511', qty: 1, unitPrice: 0, discountPercent: 0, igst: 18, cgst: 0, sgst: 0 });
   addRow({
     desc: 'Packing & Freight Charge', part: '', hsn: '996511', qty: 1,
     unitPrice: 0, discountPercent: 0, igst: 18, cgst: 0, sgst: 0
@@ -242,6 +272,7 @@ function serializeItems() {
 }
 
 async function loadInitialData() {
+  showLoader('Loading products and invoices from Google Sheet...');
   showLoader('Loading products and invoices...');
   try {
     const data = await apiGet('/initial-data');
@@ -249,6 +280,8 @@ async function loadInitialData() {
     state.invoices = data.invoices || [];
     state.nextInvoiceNo = data.nextInvoiceNo || 'SUN-001';
     renderInvoiceOptions(state.invoices);
+    if (!state.products.length) toast('No products found in Drop_down sheet.');
+    if (!state.invoices.length) toast('No existing invoices found in Data_entry sheet.');
   } finally {
     hideLoader();
   }
@@ -264,8 +297,9 @@ async function loadInvoiceForEdit() {
 
     switchView('form');
     const f = els.form;
+    ['invoiceNo', 'customerName', 'billingAddress', 'stateCode', 'shippingAddress', 'poDetails', 'gstNo', 'remark', 'invoiceDate', 'poDate'].forEach(k => {
     ['invoiceNo','customerName','billingAddress','stateCode','shippingAddress','poDetails','gstNo','remark','invoiceDate','poDate'].forEach(k => {
-      if (f[k] && data[k] !== undefined) f[k].value = data[k] || '';
+     if (f[k] && data[k] !== undefined) f[k].value = data[k] || '';
     });
 
     els.itemsBody.innerHTML = '';
@@ -295,6 +329,42 @@ async function saveInvoice(event) {
   }
 }
 
+function setAuthState(isLoggedIn) {
+  if (isLoggedIn) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    els.authView.classList.add('hidden');
+    els.appShell.classList.remove('hidden');
+  } else {
+    sessionStorage.removeItem(SESSION_KEY);
+    els.appShell.classList.add('hidden');
+    els.authView.classList.remove('hidden');
+  }
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const email = els.loginEmail.value.trim().toLowerCase();
+  const password = els.loginPassword.value;
+
+  if (email !== LOGIN_USER || password !== LOGIN_PASS) {
+    toast('Invalid credentials.');
+    return;
+  }
+
+  setAuthState(true);
+  await loadInitialData();
+}
+
+async function bootstrapAuth() {
+  const hasSession = sessionStorage.getItem(SESSION_KEY) === '1';
+  if (!hasSession) {
+    setAuthState(false);
+    return;
+  }
+  setAuthState(true);
+  await loadInitialData();
+}
+
 function wireEvents() {
   document.getElementById('btn-create-invoice').addEventListener('click', setupNewInvoice);
   document.getElementById('btn-edit-invoice').addEventListener('click', loadInvoiceForEdit);
@@ -302,6 +372,12 @@ function wireEvents() {
   document.getElementById('btn-add-item').addEventListener('click', () => addRow());
   document.getElementById('btn-add-freight').addEventListener('click', addFreightRow);
   document.getElementById('gstNo').addEventListener('input', autoFillStateCode);
+  document.getElementById('btn-logout').addEventListener('click', () => setAuthState(false));
+  els.form.addEventListener('submit', saveInvoice);
+  els.loginForm.addEventListener('submit', handleLogin);
+  els.invoiceFilter.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    renderInvoiceOptions(state.invoices.filter(inv => String(inv).toLowerCase().includes(q)));
   els.form.addEventListener('submit', saveInvoice);
   els.invoiceFilter.addEventListener('input', e => {
     const q = e.target.value.toLowerCase().trim();
@@ -320,4 +396,5 @@ window.addEventListener('unhandledrejection', e => {
 });
 
 wireEvents();
+bootstrapAuth();
 loadInitialData();

@@ -108,3 +108,22 @@ th, td { border-bottom: 1px solid var(--line); padding: .4rem; text-align: cente
   .form-grid { grid-template-columns: 1fr; }
   .col-span-2 { grid-column: span 1; }
 }
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #121a28, #243247);
+  padding: 1rem;
+}
+.auth-card {
+  width: min(440px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .2);
+}
+.auth-card h1 { margin: 0 0 .4rem; font-size: 1.4rem; color: #111827; }
+.auth-subtitle { margin: 0 0 1rem; color: var(--muted); }
+.auth-card form { display: grid; gap: .6rem; }
+.app-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }

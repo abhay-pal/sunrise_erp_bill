@@ -4,6 +4,13 @@ This project rebuilds your billing workflow as a modern responsive web app (HTML
 
 ## Project structure
 
+## Login
+
+Use the frontend login with:
+- User: `admin@sunrise.com`
+- Password: `Admin123@`
+
+
 - `index.html` - main app layout
 - `styles.css` - responsive UI theme
 - `config.js` - API URL configuration
@@ -29,6 +36,7 @@ This project rebuilds your billing workflow as a modern responsive web app (HTML
 Apps Script uses `action` routing:
 - `GET .../exec?action=initial-data`
 - `GET .../exec?action=invoice&invoiceNo=SUN-001`
+- `POST .../exec?action=save-invoice` with JSON body `{ ...formData }` (or include `"action": "save-invoice"` in body)
 - `POST .../exec` with JSON body `{ "action": "save-invoice", ...formData }`
 
 ---

@@ -13,6 +13,7 @@
 
 [[redirects]]
   from = "/api/save-invoice"
+  to = "https://script.google.com/macros/s/YOUR_SCRIPT_DEPLOYMENT_ID/exec?action=save-invoice"
   to = "https://script.google.com/macros/s/YOUR_SCRIPT_DEPLOYMENT_ID/exec"
   status = 200
   force = true
