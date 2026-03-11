@@ -20,6 +20,7 @@ const els = {
   form: document.getElementById('invoice-form'),
   invoiceSearch: document.getElementById('invoice-search'),
   invoiceFilter: document.getElementById('invoice-filter'),
+  invoiceMeta: document.getElementById('invoice-meta'),
   itemsBody: document.querySelector('#items-table tbody'),
   toast: document.getElementById('toast'),
   finalGrandTotal: document.getElementById('finalGrandTotal')
@@ -52,6 +53,19 @@ function normalizeProducts(products) {
     ];
   }).filter(product => String(product[0] || '').trim());
 
+}
+
+function normalizeInvoices(invoices) {
+  return (invoices || [])
+    .map(invoice => {
+      if (Array.isArray(invoice)) return invoice[0];
+      if (typeof invoice === 'object' && invoice !== null) {
+        return invoice.invoiceNo || invoice.invoice || invoice.id || '';
+      }
+      return invoice;
+    })
+    .map(invoice => String(invoice || '').replace(/^'/, '').trim())
+    .filter(Boolean);
 }
 
 async function apiGet(path, params = {}) {
@@ -113,6 +127,13 @@ function renderInvoiceOptions(invoices) {
     opt.textContent = inv;
     els.invoiceSearch.appendChild(opt);
   });
+
+  const count = unique.length;
+  if (els.invoiceMeta) {
+    els.invoiceMeta.textContent = count ? `${count} invoices available` : 'No invoices available';
+  }
+
+  document.getElementById('btn-edit-invoice').disabled = count === 0;
 }
 
 function setupNewInvoice() {
@@ -271,7 +292,7 @@ async function loadInitialData() {
   try {
     const data = await apiGet('/initial-data');
     state.products = normalizeProducts(data.products);
-    state.invoices = data.invoices || [];
+    state.invoices = normalizeInvoices(data.invoices);
     state.nextInvoiceNo = data.nextInvoiceNo || 'SUN-001';
     renderInvoiceOptions(state.invoices);
     if (!state.products.length) toast('No products found in Drop_down sheet.');
