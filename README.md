@@ -43,6 +43,11 @@ Apps Script uses `action` routing:
 
 ## 2) Connect frontend to backend
 
+### Current deployed Apps Script
+- Deployment ID: `AKfycbwWmUNijCzjPlejiMZhLz_l53nebJuOhsX0tbxUgZmWU4r3R9FKaM4A8Y4nd4Kmca_gpg`
+- Web App URL: `https://script.google.com/macros/s/AKfycbwWmUNijCzjPlejiMZhLz_l53nebJuOhsX0tbxUgZmWU4r3R9FKaM4A8Y4nd4Kmca_gpg/exec`
+
+
 You have 2 options:
 
 ### Option A (recommended): Netlify `/api/*` routes
@@ -88,7 +93,6 @@ You have 2 options:
 3. This repo includes `.github/workflows/deploy-pages.yml` which auto-deploys static files on every push to `main`.
 4. After workflow success, open: `https://<your-username>.github.io/<repo-name>/`.
 5. On login screen, paste your deployed Apps Script Web App URL in **Apps Script URL (for GitHub Pages)** so dropdown/products/invoices load from Google Sheets.
-
 
 
 ## 4) Test checklist
