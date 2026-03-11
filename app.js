@@ -319,6 +319,8 @@ async function loadInitialData() {
     renderInvoiceOptions(state.invoices);
     if (!state.products.length) toast('No products found in Drop_down sheet.');
     if (!state.invoices.length) toast('No existing invoices found in Bill_data sheet.');
+    if (!state.invoices.length) toast('No existing invoices found in Data_entry sheet.');
+
   } catch (error) {
     if (els.invoiceMeta) els.invoiceMeta.textContent = 'Unable to load invoices from backend';
     throw error;
