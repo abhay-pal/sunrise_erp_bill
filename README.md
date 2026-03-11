@@ -90,7 +90,6 @@ You have 2 options:
 5. On login screen, paste your deployed Apps Script Web App URL in **Apps Script URL (for GitHub Pages)** so dropdown/products/invoices load from Google Sheets.
 
 
----
 
 ## 4) Test checklist
 
@@ -100,7 +99,7 @@ You have 2 options:
 3. Fill customer details, add items, taxes, and remark.
 4. Click **Save & Generate PDF**.
 5. Confirm success toast and new browser tab with PDF link.
-6. Confirm row added/updated in `Data_entry` sheet.
+6. Confirm row added/updated in `Bill_data` sheet.
 
 ### Test edit invoice
 1. Dashboard → search invoice in filter/dropdown.
