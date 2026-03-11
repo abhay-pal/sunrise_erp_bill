@@ -89,6 +89,7 @@ You have 2 options:
 4. After workflow success, open: `https://<your-username>.github.io/<repo-name>/`.
 5. On login screen, paste your deployed Apps Script Web App URL in **Apps Script URL (for GitHub Pages)** so dropdown/products/invoices load from Google Sheets.
 
+
 ---
 
 ## 4) Test checklist
