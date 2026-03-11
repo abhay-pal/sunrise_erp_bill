@@ -150,4 +150,10 @@ th, td { border-bottom: 1px solid var(--line); padding: .4rem; text-align: cente
 .auth-card h1 { margin: 0 0 .4rem; font-size: 1.4rem; color: #111827; }
 .auth-subtitle { margin: 0 0 1rem; color: var(--muted); }
 .auth-card form { display: grid; gap: .6rem; }
+
+.field-note {
+  color: var(--muted);
+  font-size: .75rem;
+  margin-top: -.3rem;
+}
 .app-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
