@@ -80,6 +80,17 @@ You have 2 options:
 
 ---
 
+
+## 3A) Deploy frontend to GitHub Pages
+
+1. Ensure your default branch is `main` and push latest code.
+2. In GitHub repo settings, open **Pages** and set source to **GitHub Actions**.
+3. This repo includes `.github/workflows/deploy-pages.yml` which auto-deploys static files on every push to `main`.
+4. After workflow success, open: `https://<your-username>.github.io/<repo-name>/`.
+5. On login screen, paste your deployed Apps Script Web App URL in **Apps Script URL (for GitHub Pages)** so dropdown/products/invoices load from Google Sheets.
+
+---
+
 ## 4) Test checklist
 
 ### Test create invoice

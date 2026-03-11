@@ -1,6 +1,7 @@
 const LOGIN_USER = 'admin@sunrise.com';
 const LOGIN_PASS = 'Admin123@';
 const SESSION_KEY = 'sunrise_auth_ok';
+const API_URL_KEY = 'sunrise_api_root';
 const state = {
   products: [],
   invoices: [],
@@ -15,11 +16,13 @@ const els = {
   loginForm: document.getElementById('login-form'),
   loginEmail: document.getElementById('login-email'),
   loginPassword: document.getElementById('login-password'),
+  backendUrl: document.getElementById('backend-url'),
   dashboard: document.getElementById('dashboard-view'),
   formView: document.getElementById('form-view'),
   form: document.getElementById('invoice-form'),
   invoiceSearch: document.getElementById('invoice-search'),
   invoiceFilter: document.getElementById('invoice-filter'),
+  invoiceMeta: document.getElementById('invoice-meta'),
   itemsBody: document.querySelector('#items-table tbody'),
   toast: document.getElementById('toast'),
   finalGrandTotal: document.getElementById('finalGrandTotal')
@@ -27,13 +30,25 @@ const els = {
 
 const CFG = window.APP_CONFIG || {};
 
-function getApiRoot() {
-  return (CFG.APPS_SCRIPT_WEBAPP_URL || CFG.API_BASE_URL || '/api').trim();
+function getStoredApiRoot() {
+  return (localStorage.getItem(API_URL_KEY) || '').trim();
 }
 
-function useActionMode() {
-  const root = getApiRoot();
-  return !!CFG.APPS_SCRIPT_WEBAPP_URL || root.includes('script.google.com/macros');
+function saveApiRoot(url) {
+  const clean = String(url || '').trim();
+  if (!clean) {
+    localStorage.removeItem(API_URL_KEY);
+    return;
+  }
+  localStorage.setItem(API_URL_KEY, clean);
+}
+
+function getApiRoot() {
+  return getStoredApiRoot() || (CFG.APPS_SCRIPT_WEBAPP_URL || CFG.API_BASE_URL || '/api').trim();
+}
+
+function useActionMode(root = getApiRoot()) {
+  return root.includes('script.google.com/macros');
 }
 
 function actionFromPath(path) {
@@ -54,22 +69,45 @@ function normalizeProducts(products) {
 
 }
 
+function normalizeInvoices(invoices) {
+  return (invoices || [])
+    .map(invoice => {
+      if (Array.isArray(invoice)) return invoice[0];
+      if (typeof invoice === 'object' && invoice !== null) {
+        return invoice.invoiceNo || invoice.invoice || invoice.id || '';
+      }
+      return invoice;
+    })
+    .map(invoice => String(invoice || '').replace(/^'/, '').trim())
+    .filter(Boolean);
+}
+
+async function parseResponse(res) {
+  const text = await res.text();
+  let json;
+  try {
+    json = text ? JSON.parse(text) : {};
+  } catch (error) {
+    throw new Error('Backend response is not JSON. Check Apps Script URL or /api proxy setup.');
+  }
+  if (!res.ok || json.success === false) throw new Error(json.error || 'Request failed');
+  return json.data || json;
+}
+
 async function apiGet(path, params = {}) {
   const root = getApiRoot();
-  const actionMode = useActionMode();
+  const actionMode = useActionMode(root);
   const url = new URL(actionMode ? root : `${root}${path}`, window.location.origin);
   if (actionMode) url.searchParams.set('action', actionFromPath(path));
   Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
 
   const res = await fetch(url.toString(), { method: 'GET' });
-  const json = await res.json();
-  if (!res.ok || json.success === false) throw new Error(json.error || 'Request failed');
-  return json.data || json;
+  return parseResponse(res);
 }
 
 async function apiPost(path, payload) {
   const root = getApiRoot();
-  const actionMode = useActionMode();
+  const actionMode = useActionMode(root);
   const url = new URL(actionMode ? root : `${root}${path}`, window.location.origin);
   const body = { action: actionFromPath(path), ...payload };
   const res = await fetch(url.toString(), {
@@ -77,9 +115,7 @@ async function apiPost(path, payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  const json = await res.json();
-  if (!res.ok || json.success === false) throw new Error(json.error || 'Save failed');
-  return json.data || json;
+  return parseResponse(res);
 }
 
 function showLoader(msg) {
@@ -113,6 +149,13 @@ function renderInvoiceOptions(invoices) {
     opt.textContent = inv;
     els.invoiceSearch.appendChild(opt);
   });
+
+  const count = unique.length;
+  if (els.invoiceMeta) {
+    els.invoiceMeta.textContent = count ? `${count} invoices available` : 'No invoices available';
+  }
+
+  document.getElementById('btn-edit-invoice').disabled = count === 0;
 }
 
 function setupNewInvoice() {
@@ -271,11 +314,14 @@ async function loadInitialData() {
   try {
     const data = await apiGet('/initial-data');
     state.products = normalizeProducts(data.products);
-    state.invoices = data.invoices || [];
+    state.invoices = normalizeInvoices(data.invoices);
     state.nextInvoiceNo = data.nextInvoiceNo || 'SUN-001';
     renderInvoiceOptions(state.invoices);
     if (!state.products.length) toast('No products found in Drop_down sheet.');
     if (!state.invoices.length) toast('No existing invoices found in Data_entry sheet.');
+  } catch (error) {
+    if (els.invoiceMeta) els.invoiceMeta.textContent = 'Unable to load invoices from backend';
+    throw error;
   } finally {
     hideLoader();
   }
@@ -338,17 +384,21 @@ async function handleLogin(event) {
   event.preventDefault();
   const email = els.loginEmail.value.trim().toLowerCase();
   const password = els.loginPassword.value;
+  const backendUrl = (els.backendUrl?.value || '').trim();
 
   if (email !== LOGIN_USER || password !== LOGIN_PASS) {
     toast('Invalid credentials.');
     return;
   }
 
+  saveApiRoot(backendUrl);
   setAuthState(true);
   await loadInitialData();
 }
 
 async function bootstrapAuth() {
+  const savedApiRoot = getStoredApiRoot();
+  if (els.backendUrl) els.backendUrl.value = savedApiRoot;
   const hasSession = sessionStorage.getItem(SESSION_KEY) === '1';
   if (!hasSession) {
     setAuthState(false);
